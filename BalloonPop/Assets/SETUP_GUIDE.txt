@@ -1,0 +1,155 @@
+══════════════════════════════════════════════════════════════
+  BALLOON POP — UNITY SCENE SETUP GUIDE
+══════════════════════════════════════════════════════════════
+
+All scripts are in Assets/Scripts/
+Open SampleScene and follow these steps.
+
+────────────────────────────────────────────────────────────
+STEP 1 — CAMERA
+────────────────────────────────────────────────────────────
+• Select Main Camera
+• Set Projection = Orthographic
+• Set Size = 5 (covers -5 to +5 vertically)
+• Set Background Color to a nice sky blue
+
+────────────────────────────────────────────────────────────
+STEP 2 — GAME MANAGER (empty GameObject)
+────────────────────────────────────────────────────────────
+• Create Empty → name it "GameManager"
+• Add Component → GameManager
+• Add Component → AudioManager (assign audio clips)
+• Add Component → AdManager
+
+────────────────────────────────────────────────────────────
+STEP 3 — BALLOON SPAWNER (empty GameObject)
+────────────────────────────────────────────────────────────
+• Create Empty → name it "BalloonSpawner"
+• Add Component → BalloonSpawner
+• Assign Balloon Prefab (see Step 6)
+
+────────────────────────────────────────────────────────────
+STEP 4 — BACKGROUND (optional)
+────────────────────────────────────────────────────────────
+• Create 2D Sprite → pick a gradient sky sprite
+• Scale it to cover the full screen
+• Add Component → BackgroundScroller (optional scroll effect)
+
+────────────────────────────────────────────────────────────
+STEP 5 — UI CANVAS
+────────────────────────────────────────────────────────────
+• Create → UI → Canvas
+  • Render Mode = Screen Space - Overlay
+  • Add Component → UIManager
+
+• Inside Canvas, create:
+
+  [HUD Panel]  (UI → Panel, name "HUDPanel")
+    • TextMeshPro → "SCORE\n0"  (top-left)   → scoreText
+    • TextMeshPro → "60"         (top-center) → timerText
+    • TextMeshPro → "LVL 1"     (top-right)  → levelText
+
+  [Game Over Panel] (UI → Panel, name "GameOverPanel", start hidden)
+    • TextMeshPro → "GAME OVER"
+    • TextMeshPro → "SCORE: 0"   → finalScoreText
+    • TextMeshPro → "BEST: 0"    → bestScoreText
+    • Button "PLAY AGAIN"        → playAgainButton
+    • Button "🎁 WATCH AD +30s"  → watchAdButton
+    • Button "🏠 HOME"           → homeButton
+
+  [Main Menu Panel] (UI → Panel, name "MainMenuPanel")
+    • TextMeshPro → "BALLOON POP"
+    • TextMeshPro → "BEST: 0"    → menuBestScoreText
+    • Button "PLAY"              → startButton
+
+  [Level Up Text] (TextMeshPro, starts hidden)
+    • Center screen, large bold font
+    • Add Component → LevelUpEffect → assign this TMP as levelUpText
+
+  [Score Popup Prefab]
+    • Create a UI → TextMeshPro object
+    • Add Component → ScorePopup
+    • Save as Prefab in Assets/Prefabs/
+    • Assign to UIManager → scorePopupPrefab
+
+• Drag the Canvas itself into UIManager → gameCanvas
+
+────────────────────────────────────────────────────────────
+STEP 6 — BALLOON PREFAB
+────────────────────────────────────────────────────────────
+• Create → 2D Object → Sprite (or use a Circle shape)
+  • Sprite = a circle/balloon shape (use Unity's built-in circle
+    or import a balloon PNG)
+• Add Component → CircleCollider2D, check "Is Trigger"
+• Add Component → Balloon
+  • Assign typeColors[] (already has defaults)
+  • Assign popEffectPrefab (see Step 7)
+• Save as Prefab → Assets/Prefabs/Balloon.prefab
+• Assign to BalloonSpawner → balloonPrefab
+
+────────────────────────────────────────────────────────────
+STEP 7 — POP EFFECT PREFAB (optional but looks great)
+────────────────────────────────────────────────────────────
+Option A — Use PopEffect.cs script:
+  • Create Empty → name "PopEffect"
+  • Add Component → PopEffect
+  • Assign a circle Sprite to circleSprite
+  • Save as Prefab → Assets/Prefabs/PopEffect.prefab
+  • Assign to Balloon prefab → popEffectPrefab
+
+Option B — Use Unity Particle System (better visuals):
+  • Create → Effects → Particle System
+  • Shape = Circle, Emission burst = 8–10 particles
+  • Start Lifetime = 0.5, Start Speed = 3
+  • Color over Lifetime = fade to transparent
+  • Stop Action = Destroy
+  • Save as Prefab and assign to Balloon → popEffectPrefab
+
+────────────────────────────────────────────────────────────
+STEP 8 — AUDIO (optional)
+────────────────────────────────────────────────────────────
+• Import free sound effects:
+  - Pop sound (freesound.org → search "balloon pop")
+  - Bomb explosion
+  - Heart chime
+  - Background music (looping)
+• Assign to AudioManager component fields
+
+────────────────────────────────────────────────────────────
+STEP 9 — BUILD FOR ANDROID
+────────────────────────────────────────────────────────────
+• File → Build Settings → Android
+• Player Settings:
+  - Company Name, Product Name
+  - Package Name: com.yourname.balloonpop
+  - Minimum API Level: 21 (Android 5.0)
+  - Target API Level: 33+
+  - Scripting Backend: IL2CPP
+  - Target Architectures: ARM64 + ARMv7
+• Build → generate .aab file
+• Upload to Google Play Console
+
+────────────────────────────────────────────────────────────
+ADS SETUP (when ready)
+────────────────────────────────────────────────────────────
+1. Install Google Mobile Ads Unity Plugin
+2. Open AdManager.cs
+3. Uncomment: #define USE_ADMOB
+4. Replace App ID and Ad Unit IDs with your real ones
+5. The rest is already wired up
+
+══════════════════════════════════════════════════════════════
+  SCRIPT SUMMARY
+══════════════════════════════════════════════════════════════
+GameManager.cs      — score, timer, levels, game state
+BalloonType.cs      — enum + weights + points per type
+Balloon.cs          — movement, wobble, tap-to-pop
+BalloonSpawner.cs   — random spawning with level scaling
+PopEffect.cs        — burst animation on pop
+UIManager.cs        — all UI panels and updates
+ScorePopup.cs       — floating "+10" text animation
+AudioManager.cs     — all sound effects and music
+AdManager.cs        — AdMob rewarded/interstitial/banner
+BackgroundScroller.cs — optional sky scroll
+LevelUpEffect.cs    — "LEVEL 3!" banner animation
+══════════════════════════════════════════════════════════════

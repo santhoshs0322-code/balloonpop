@@ -1,0 +1,45 @@
+# Unity-generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Unity and IDE-generated files
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.vscode/
+.idea/
+
+# Build artifacts
+*.apk
+*.aab
+*.unitypackage
+*_BurstDebugInformation_DoNotShip/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local verification output
+**/Verification/*.dll
+**/Verification/*.exe
+**/Verification/*.pdb
+**/Verification/*.log
+build-verify.log
