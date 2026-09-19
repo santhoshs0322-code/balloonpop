@@ -1,3 +1,4 @@
 {
-  "apiBaseUrl": "https://YOUR-API-DOMAIN.example.com"
+  "apiBaseUrl": "https://YOUR-AUTH-SERVER.onrender.com",
+  "appId": "balloonpop"
 }

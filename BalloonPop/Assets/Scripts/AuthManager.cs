@@ -18,6 +18,7 @@ public class AuthUser
 class AuthConfigData
 {
     public string apiBaseUrl = "http://localhost:3000";
+    public string appId = "balloonpop";
 }
 
 [Serializable]
@@ -39,6 +40,7 @@ public class AuthManager : MonoBehaviour
 
     const string TokenKey = "AuthSessionToken";
     string _apiBaseUrl;
+    string _appId;
     string _token;
     public AuthUser User { get; private set; }
     public bool IsLoggedIn => User != null && !string.IsNullOrEmpty(_token);
@@ -54,6 +56,7 @@ public class AuthManager : MonoBehaviour
         var asset = Resources.Load<TextAsset>("AuthConfig");
         var config = asset != null ? JsonUtility.FromJson<AuthConfigData>(asset.text) : new AuthConfigData();
         _apiBaseUrl = (config.apiBaseUrl ?? "").TrimEnd('/');
+        _appId = string.IsNullOrEmpty(config.appId) ? "balloonpop" : config.appId.Trim().ToLowerInvariant();
         _token = PlayerPrefs.GetString(TokenKey, "");
         Application.deepLinkActivated += OnDeepLink;
 
@@ -77,7 +80,7 @@ public class AuthManager : MonoBehaviour
         }
         Status = "Opening Google sign-in…";
         StateChanged?.Invoke();
-        Application.OpenURL(_apiBaseUrl + "/auth/google?platform=unity");
+        Application.OpenURL(_apiBaseUrl + "/auth/google?app=" + UnityWebRequest.EscapeURL(_appId));
     }
 
     public void Logout()
