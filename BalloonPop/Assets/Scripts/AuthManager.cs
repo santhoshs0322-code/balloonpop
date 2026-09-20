@@ -19,6 +19,7 @@ class AuthConfigData
 {
     public string apiBaseUrl = "http://localhost:3000";
     public string appId = "balloonpop";
+    public string googleWebClientId = "";
 }
 
 [Serializable]
@@ -26,7 +27,15 @@ class AuthResponse
 {
     public bool ok;
     public string message;
+    public string token;
     public AuthUser user;
+}
+
+[Serializable]
+class NativeGoogleRequest
+{
+    public string app;
+    public string idToken;
 }
 
 /// <summary>
@@ -41,6 +50,7 @@ public class AuthManager : MonoBehaviour
     const string TokenKey = "AuthSessionToken";
     string _apiBaseUrl;
     string _appId;
+    string _googleWebClientId;
     string _token;
     public AuthUser User { get; private set; }
     public bool IsLoggedIn => User != null && !string.IsNullOrEmpty(_token);
@@ -57,6 +67,7 @@ public class AuthManager : MonoBehaviour
         var config = asset != null ? JsonUtility.FromJson<AuthConfigData>(asset.text) : new AuthConfigData();
         _apiBaseUrl = (config.apiBaseUrl ?? "").TrimEnd('/');
         _appId = string.IsNullOrEmpty(config.appId) ? "balloonpop" : config.appId.Trim().ToLowerInvariant();
+        _googleWebClientId = (config.googleWebClientId ?? "").Trim();
         _token = PlayerPrefs.GetString(TokenKey, "");
         Application.deepLinkActivated += OnDeepLink;
 
@@ -79,8 +90,80 @@ public class AuthManager : MonoBehaviour
             return;
         }
         Status = "Opening Google sign-in…";
+        IsBusy = true;
         StateChanged?.Invoke();
+#if UNITY_ANDROID && !UNITY_EDITOR
+        if (string.IsNullOrEmpty(_googleWebClientId))
+        {
+            IsBusy = false;
+            Status = "Google Android client is not configured";
+            StateChanged?.Invoke();
+            return;
+        }
+        try
+        {
+            using (var bridge = new AndroidJavaClass("com.gamixtv.balloonpop.auth.NativeGoogleAuth"))
+                bridge.CallStatic("signIn", _googleWebClientId);
+        }
+        catch (Exception error)
+        {
+            IsBusy = false;
+            Status = "Native Google sign-in is unavailable: " + error.Message;
+            StateChanged?.Invoke();
+        }
+#else
+        IsBusy = false;
         Application.OpenURL(_apiBaseUrl + "/auth/google?app=" + UnityWebRequest.EscapeURL(_appId));
+#endif
+    }
+
+    // Called by the Android Credential Manager bridge through UnitySendMessage.
+    public void OnNativeGoogleToken(string idToken)
+    {
+        if (string.IsNullOrEmpty(idToken)) { OnNativeGoogleError("Google returned an empty identity token"); return; }
+        StartCoroutine(ExchangeNativeToken(idToken));
+    }
+
+    public void OnNativeGoogleError(string message)
+    {
+        IsBusy = false;
+        Status = string.IsNullOrEmpty(message) ? "Google sign-in was not completed" : message;
+        StateChanged?.Invoke();
+    }
+
+    IEnumerator ExchangeNativeToken(string idToken)
+    {
+        IsBusy = true;
+        Status = "Verifying your Google account…";
+        StateChanged?.Invoke();
+        var payload = new NativeGoogleRequest { app = _appId, idToken = idToken };
+        byte[] body = System.Text.Encoding.UTF8.GetBytes(JsonUtility.ToJson(payload));
+        using (var request = new UnityWebRequest(_apiBaseUrl + "/auth/google/native", "POST"))
+        {
+            request.uploadHandler = new UploadHandlerRaw(body);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            yield return request.SendWebRequest();
+            if (request.result == UnityWebRequest.Result.Success)
+            {
+                var response = JsonUtility.FromJson<AuthResponse>(request.downloadHandler.text);
+                if (response != null && response.ok && !string.IsNullOrEmpty(response.token))
+                {
+                    _token = response.token;
+                    User = response.user;
+                    PlayerPrefs.SetString(TokenKey, _token);
+                    PlayerPrefs.Save();
+                    Status = "Signed in with Google";
+                }
+                else Status = "Google account verification failed";
+            }
+            else
+            {
+                Status = request.responseCode == 401 ? "Google could not verify this app" : "Account service is unavailable";
+            }
+        }
+        IsBusy = false;
+        StateChanged?.Invoke();
     }
 
     public void Logout()
@@ -155,6 +238,14 @@ public class AuthManager : MonoBehaviour
             yield return request.SendWebRequest();
         }
         ClearSession();
+#if UNITY_ANDROID && !UNITY_EDITOR
+        try
+        {
+            using (var bridge = new AndroidJavaClass("com.gamixtv.balloonpop.auth.NativeGoogleAuth"))
+                bridge.CallStatic("clearCredentialState");
+        }
+        catch (Exception) { }
+#endif
         Status = "Signed out safely";
         IsBusy = false;
         StateChanged?.Invoke();
