@@ -34,7 +34,7 @@ public final class NativeGoogleAuth {
                 GetCredentialRequest request = new GetCredentialRequest.Builder()
                     .addCredentialOption(option)
                     .build();
-                CredentialManager manager = CredentialManager.create(activity);
+                CredentialManager manager = CredentialManager.Companion.create(activity);
                 Executor mainExecutor = command -> activity.runOnUiThread(command);
                 manager.getCredentialAsync(
                     activity,
@@ -66,7 +66,7 @@ public final class NativeGoogleAuth {
         if (activity == null) return;
         activity.runOnUiThread(() -> {
             try {
-                CredentialManager manager = CredentialManager.create(activity);
+                CredentialManager manager = CredentialManager.Companion.create(activity);
                 Executor mainExecutor = command -> activity.runOnUiThread(command);
                 manager.clearCredentialStateAsync(
                     new androidx.credentials.ClearCredentialStateRequest(),
