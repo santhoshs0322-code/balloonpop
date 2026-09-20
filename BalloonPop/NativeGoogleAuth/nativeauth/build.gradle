@@ -2,7 +2,7 @@ plugins { id 'com.android.library' }
 
 android {
     namespace 'com.gamixtv.balloonpop.auth'
-    compileSdk 34
+    compileSdk 35
     buildToolsVersion '34.0.0'
     defaultConfig { minSdk 22 }
     compileOptions {
@@ -13,7 +13,7 @@ android {
 
 dependencies {
     compileOnly files('../../Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/libs/unity-classes.jar')
-    implementation 'androidx.credentials:credentials:1.3.0'
-    implementation 'androidx.credentials:credentials-play-services-auth:1.3.0'
+    implementation 'androidx.credentials:credentials:1.5.0'
+    implementation 'androidx.credentials:credentials-play-services-auth:1.5.0'
     implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
 }
