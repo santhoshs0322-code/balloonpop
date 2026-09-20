@@ -2,6 +2,7 @@ package com.gamixtv.balloonpop.auth;
 
 import android.app.Activity;
 import android.os.CancellationSignal;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.credentials.Credential;
 import androidx.credentials.CredentialManager;
@@ -18,6 +19,7 @@ import java.util.concurrent.Executor;
 
 public final class NativeGoogleAuth {
     private static final String UNITY_OBJECT = "AuthManager";
+    private static final String LOG_TAG = "BalloonPopAuth";
 
     private NativeGoogleAuth() {}
 
@@ -43,12 +45,18 @@ public final class NativeGoogleAuth {
                     mainExecutor,
                     new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
                         @Override public void onResult(GetCredentialResponse response) {
+                            Log.i(LOG_TAG, "Google credential received");
                             handleCredential(response.getCredential());
                         }
 
                         @Override public void onError(@NonNull GetCredentialException error) {
+                            Log.e(LOG_TAG, "Google credential request failed. type=" + error.getType()
+                                + ", message=" + error.getMessage(), error);
                             if (error instanceof NoCredentialException) {
                                 sendError("No Google account is available on this device");
+                            } else if (error.getMessage() != null &&
+                                error.getMessage().toLowerCase(java.util.Locale.ROOT).contains("reauth")) {
+                                sendError("Google account reauthentication failed. Try another account, then check the Android OAuth package and SHA-1.");
                             } else {
                                 sendError(error.getMessage() == null ? "Google sign-in was not completed" : error.getMessage());
                             }
@@ -56,6 +64,7 @@ public final class NativeGoogleAuth {
                     }
                 );
             } catch (Exception error) {
+                Log.e(LOG_TAG, "Could not start Google sign-in", error);
                 sendError(error.getMessage() == null ? "Could not start Google sign-in" : error.getMessage());
             }
         });
@@ -91,6 +100,7 @@ public final class NativeGoogleAuth {
             GoogleIdTokenCredential googleCredential = GoogleIdTokenCredential.createFrom(credential.getData());
             UnityPlayer.UnitySendMessage(UNITY_OBJECT, "OnNativeGoogleToken", googleCredential.getIdToken());
         } catch (Exception error) {
+            Log.e(LOG_TAG, "Could not parse Google identity token", error);
             sendError("Google returned an invalid identity token");
         }
     }
